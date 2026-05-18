@@ -1,0 +1,2 @@
+@extends('layouts.app')
+@section('content')<section class="mx-auto max-w-md px-4 py-16"><h1 class="text-4xl font-black">Verification email</h1><p class="mt-4">Verifiez votre boite mail pour activer votre compte.</p><form method="POST" action="{{ route('verification.send') }}" class="mt-6">@csrf<button class="rounded bg-red-600 px-5 py-3 font-bold text-white">Renvoyer</button></form></section>@endsection

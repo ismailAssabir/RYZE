@@ -1,0 +1,2 @@
+@extends('layouts.app')
+@section('content')<section class="mx-auto max-w-7xl px-4 py-10"><h1 class="text-4xl font-black">Blog sport</h1><div class="mt-6 grid gap-5 md:grid-cols-3">@foreach($posts as $post)<article class="rounded-lg border border-zinc-200 p-6 dark:border-zinc-800"><p class="text-sm text-red-600">{{ $post->category }}</p><h2 class="mt-2 text-xl font-black">{{ $post->title }}</h2><p class="mt-3 text-zinc-600 dark:text-zinc-300">{{ $post->excerpt }}</p></article>@endforeach</div></section>@endsection

@@ -1,0 +1,11 @@
+{
+  "name": "RYZE",
+  "short_name": "RYZE",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#dc2626",
+  "icons": [
+    { "src": "/images/ryze-logo.jpeg", "sizes": "512x512", "type": "image/jpeg" }
+  ]
+}

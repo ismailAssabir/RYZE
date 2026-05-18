@@ -1,0 +1,2 @@
+@extends('layouts.app')
+@section('content')<section class="mx-auto max-w-md px-4 py-16"><h1 class="text-4xl font-black">Mot de passe oublie</h1><form method="POST" action="{{ route('password.email') }}" class="mt-6 grid gap-4">@csrf<input name="email" type="email" class="rounded border-zinc-300 bg-transparent" placeholder="Email"><button class="rounded bg-red-600 px-5 py-3 font-bold text-white">Envoyer le lien</button></form></section>@endsection
