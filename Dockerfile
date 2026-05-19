@@ -1,33 +1,33 @@
-# استخدم نسخة PHP مع Apache
 FROM php:8.3-apache
 
-# تثبيت متطلبات النظام وComposer
+# تثبيت الإضافات الأساسية
 RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     git \
     unzip \
     && docker-php-ext-install pdo pdo_sqlite
 
-# تثبيت Composer من الصورة الرسمية
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# إعداد المجلد الرئيسي
+# إعداد العمل
 WORKDIR /var/www/html
 
-# نسخ ملفات Composer أولاً لتسريع عملية البناء (Cache)
-COPY composer.json composer.lock* ./
+# تثبيت Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# تثبيت المكتبات (هذا هو السطر المفقود)
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+# نسخ ملفات التثبيت أولاً (للاستفادة من الـ Docker Cache)
+COPY composer.json composer.lock ./
 
-# نسخ باقي ملفات المشروع
+# تثبيت المكتبات بدون سكربتات لتجنب أخطاء الإعداد أثناء البناء
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# نسخ كامل كود المصدر
 COPY . .
 
-# إعداد الصلاحيات
+# إصلاح الصلاحيات (مهم جداً)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# تغيير مسار Apache ليشير إلى public
+# ضبط مسار Apache
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-EXPOSE 80
+# إضافة أمر التشغيل الافتراضي
+CMD ["apache2-foreground"]
