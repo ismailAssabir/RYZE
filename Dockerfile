@@ -1,33 +1,32 @@
 FROM php:8.3-apache
 
-# تثبيت الإضافات الأساسية
-RUN apt-get update && apt-get install -y \
-    libsqlite3-dev \
-    git \
-    unzip \
-    && docker-php-ext-install pdo pdo_sqlite
-
-# إعداد العمل
-WORKDIR /var/www/html
+# تثبيت الحزم اللازمة
+RUN apt-get update && apt-get install -y libsqlite3-dev git unzip
+RUN docker-php-ext-install pdo pdo_sqlite
 
 # تثبيت Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# نسخ ملفات التثبيت أولاً (للاستفادة من الـ Docker Cache)
+WORKDIR /var/www/html
+
+# نسخ ملفات التعريف أولاً
 COPY composer.json composer.lock ./
 
-# تثبيت المكتبات بدون سكربتات لتجنب أخطاء الإعداد أثناء البناء
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+# تثبيت الحزم
+RUN composer install --no-dev --optimize-autoloader
 
-# نسخ كامل كود المصدر
+# نسخ كل شيء من المجلد الحالي إلى الحاوية
 COPY . .
 
-# إصلاح الصلاحيات (مهم جداً)
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# تصحيح الصلاحيات (هذا هو الجزء الذي يحل مشكلة الـ Permission/Access)
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# ضبط مسار Apache
+# تأكيد وجود الملفات (لأغراض التصحيح)
+RUN ls -la /var/www/html
+
+# إعداد Apache
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# إضافة أمر التشغيل الافتراضي
 CMD ["apache2-foreground"]
