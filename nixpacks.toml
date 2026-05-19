@@ -9,6 +9,11 @@ nixPkgs = [
     "php83Extensions.ctype"
 ]
 
+[phases.install]
+cmds = [
+    "composer install --ignore-platform-reqs"
+]
+
 [phases.build]
 cmds = [
     "composer install --no-dev --optimize-autoloader",
