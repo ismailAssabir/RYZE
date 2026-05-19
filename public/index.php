@@ -17,4 +17,7 @@ require __DIR__.'/../vendor/autoload.php';
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
+// 💡 السطر المنقذ: إجبار الإطار على ربط مسار الـ config بالمسار الحقيقي للمجلد أونلاين
+$app->useConfigPath(__DIR__.'/../config');
+
 $app->handleRequest(Request::capture());
