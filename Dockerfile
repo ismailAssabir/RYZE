@@ -1,32 +1,32 @@
 FROM php:8.3-apache
 
-# تثبيت الحزم اللازمة
-RUN apt-get update && apt-get install -y libsqlite3-dev git unzip
-RUN docker-php-ext-install pdo pdo_sqlite
+# تثبيت الحزم المطلوبة
+RUN apt-get update && apt-get install -y libsqlite3-dev git unzip \
+    && docker-php-ext-install pdo pdo_sqlite
 
 # تثبيت Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# إعداد العمل
 WORKDIR /var/www/html
 
-# نسخ ملفات التعريف أولاً
-COPY composer.json composer.lock ./
+# نسخ ملفات الإعدادات وتثبيت الحزم
+COPY composer.json composer.lock* ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# تثبيت الحزم
-RUN composer install --no-dev --optimize-autoloader
-
-# نسخ كل شيء من المجلد الحالي إلى الحاوية
+# نسخ كل الكود (هنا نتأكد من النسخ)
 COPY . .
 
-# تصحيح الصلاحيات (هذا هو الجزء الذي يحل مشكلة الـ Permission/Access)
-RUN chown -R www-data:www-data /var/www/html && \
-    chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
-
-# تأكيد وجود الملفات (لأغراض التصحيح)
-RUN ls -la /var/www/html
-
-# إعداد Apache
+# ⚠️ الخطوة الأهم: إجبار Apache على قراءة المجلد الصحيح
 RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
+
+# ضبط الصلاحيات بشكل صارم
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# فحص نهائي أثناء البناء (ستظهر هذه النتائج في Build Logs في Railway)
+RUN ls -R /var/www/html
+
+EXPOSE 80
 
 CMD ["apache2-foreground"]
