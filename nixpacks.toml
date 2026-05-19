@@ -1,0 +1,27 @@
+# Railway/Nixpacks config
+# Note: This file is used by Nixpacks during build to determine how to run your app.
+
+[phases.setup]
+aptPkgs = []
+
+[phases.install]
+cmds = [
+  "composer install --no-interaction --no-progress --prefer-dist",
+  "npm ci --no-audit --no-fund",
+  "npm run build"
+]
+
+[phases.build]
+cmds = [
+  "test -f .env || (test -f .env.example && cp .env.example .env) || true",
+  "php artisan key:generate --force --no-interaction || true",
+  "php artisan storage:link || true"
+]
+
+[start]
+cmd = "sh railway-start.sh"
+
+[variables]
+# Ensure Railway sets PORT
+PORT = "8000"
+
