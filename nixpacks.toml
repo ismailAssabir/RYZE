@@ -10,15 +10,12 @@ nixPkgs = [
 ]
 
 [phases.install]
-cmds = [
-    "composer install --ignore-platform-reqs"
-]
+cmds = ["composer install --no-dev --optimize-autoloader"]
 
+# قمنا بإزالة أمر php artisan config:cache لأنه هو الذي يسبب الانهيار حالياً
 [phases.build]
-cmds = [
-    "composer install --no-dev --optimize-autoloader",
-    "php artisan config:cache"
-]
+cmds = []
 
+# تشغيل التطبيق مباشرة مع السماح بالوصول للملفات
 [start]
 cmd = "php -S 0.0.0.0:${PORT} -t public"
