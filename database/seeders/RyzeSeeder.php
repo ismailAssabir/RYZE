@@ -61,8 +61,8 @@ class RyzeSeeder extends Seeder
                     'sale_price' => $i % 4 === 0 ? fake()->numberBetween(149, 999) : null,
                     'stock' => fake()->numberBetween(3, 80),
                     // `sizes`/`colors` exist only in older schema.
-                    'sizes' => ['S', 'M', 'L', 'XL'],
-                    'colors' => ['Black', 'White', 'Red'],
+                    // sizes/colors: only seed columns that exist in current schema
+                    // (schema evolves; older versions used json columns, newer uses tables)
                     'is_active' => true,
                     'featured' => $i <= 8,
                     'trending' => $i % 2 === 0,
@@ -71,7 +71,26 @@ class RyzeSeeder extends Seeder
                 ]
             );
 
-            ProductImage::updateOrCreate(['product_id' => $product->id, 'is_primary' => true], ['path' => 'images/ryze-logo.jpeg', 'alt' => $product->name]);
+            // If the products table has legacy json columns, keep seeding them
+            if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'sizes')) {
+                $product->sizes = ['S', 'M', 'L', 'XL'];
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn('products', 'colors')) {
+                $product->colors = ['Black', 'White', 'Red'];
+            }
+            if ($product->isDirty()) {
+                $product->save();
+            }
+
+
+ProductImage::updateOrCreate(
+                ['product_id' => $product->id, 'is_primary' => true],
+                [
+                    // schema may use `image` (new) or `path` (legacy). Use `image` to match current migration.
+                    'image' => 'images/ryze-logo.jpeg',
+                    'alt' => $product->name,
+                ]
+            );
         }
 
         Coupon::updateOrCreate(['code' => 'RYZE10'], ['type' => 'percent', 'value' => 10, 'minimum_amount' => 300, 'usage_limit' => 100, 'is_active' => true]);

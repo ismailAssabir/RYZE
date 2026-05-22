@@ -14,12 +14,13 @@ cmds = [
 [phases.build]
 cmds = [
   "test -f .env || (test -f .env.example && cp .env.example .env) || true",
-  "php artisan key:generate --force --no-interaction || true",
-  "php artisan storage:link || true"
+  "php artisan key:generate --force --no-interaction || true"
 ]
 
 [start]
-cmd = "sh railway-start.sh"
+cmd = "bash -lc 'echo \'--- ls /app ---\'; ls -la /app; echo \'--- ls /app/bootstrap /app/config ---\'; ls -la /app/bootstrap /app/config; echo \'--- ls cwd ---\'; pwd; ls -la; sh railway-start.sh'"
+
+
 
 [variables]
 # Ensure Railway sets PORT

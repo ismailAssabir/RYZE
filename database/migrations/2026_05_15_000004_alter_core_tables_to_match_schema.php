@@ -83,11 +83,10 @@ return new class extends Migration
             }
 
             // If the old column names exist, drop them to match the new schema.
+            // (Keep only ONE occurrence of this block to avoid duplicate DDL.)
             if (Schema::hasColumn('products', 'is_trending') && !Schema::hasColumn('products', 'trending')) {
                 $table->dropColumn('is_trending');
             }
-
-
 
             if (!Schema::hasColumn('products', 'thumbnail')) {
                 $table->string('thumbnail')->nullable()->after('description');
@@ -97,13 +96,6 @@ return new class extends Migration
             if (Schema::hasColumn('products', 'is_featured') && !Schema::hasColumn('products', 'featured')) {
                 $table->dropColumn('is_featured');
             }
-
-            // If is_trending exists but trending does not, drop it (keep index/schema aligned)
-            if (Schema::hasColumn('products', 'is_trending') && !Schema::hasColumn('products', 'trending')) {
-                $table->dropColumn('is_trending');
-            }
-
-
 
             // remove json sizes/colors/attributes if they exist
             if (Schema::hasColumn('products', 'sizes')) {
@@ -124,14 +116,23 @@ return new class extends Migration
 
         // PRODUCT_IMAGES: align to image/alt and remove path/alt naming mismatch
         Schema::table('product_images', function (Blueprint $table) {
-            if (Schema::hasColumn('product_images', 'path') && !Schema::hasColumn('product_images', 'image')) {
+            $hasPath = Schema::hasColumn('product_images', 'path');
+            $hasImage = Schema::hasColumn('product_images', 'image');
+
+            // If legacy column `path` exists and `image` doesn't, create `image` and drop `path`.
+            if ($hasPath && !$hasImage) {
                 $table->string('image')->nullable()->after('product_id');
                 // data mapping not handled
                 $table->dropColumn('path');
+                $hasImage = true;
             }
-            if (!Schema::hasColumn('product_images', 'image')) {
-                $table->string('image')->after('product_id');
+
+            // If `image` doesn't exist, add it.
+            // (Guarded to prevent "Duplicate column name 'image'".)
+            if (!$hasImage && !Schema::hasColumn('product_images', 'image')) {
+                $table->string('image')->nullable()->after('product_id');
             }
+
             if (!Schema::hasColumn('product_images', 'created_at')) {
                 $table->timestamps();
             }
@@ -220,27 +221,38 @@ return new class extends Migration
 
         // ORDER_ITEMS
         Schema::table('order_items', function (Blueprint $table) {
-            if (!Schema::hasColumn('order_items', 'size')) {
+            $hasSize = Schema::hasColumn('order_items', 'size');
+            $hasProductName = Schema::hasColumn('order_items', 'product_name');
+            $hasSku = Schema::hasColumn('order_items', 'sku');
+            $hasTotal = Schema::hasColumn('order_items', 'total');
+            $hasPrice = Schema::hasColumn('order_items', 'price');
+            $hasCreatedAt = Schema::hasColumn('order_items', 'created_at');
+
+            if (!$hasSize) {
                 $table->string('size')->nullable()->after('color');
             }
-            if (Schema::hasColumn('order_items', 'product_name')) {
+            if ($hasProductName) {
                 $table->dropColumn('product_name');
             }
-            if (Schema::hasColumn('order_items', 'sku')) {
-                // keep/adjust
+            if ($hasSku) {
                 $table->dropColumn('sku');
             }
 
-            // Si 'total' existe, on le renomme en 'price' (sinon on crée 'price' seulement s'il n'existe pas)
-            if (Schema::hasColumn('order_items', 'total') && !Schema::hasColumn('order_items', 'price')) {
-                $table->renameColumn('total', 'price');
+            // Gestion robuste du champ `price` :
+            // 1) Si `price` existe déjà => ne rien faire
+            // 2) Sinon, si `total` existe => rename total -> price
+            // 3) Sinon => créer price
+            if ($hasPrice) {
+                // noop
+            } else {
+                if ($hasTotal) {
+                    $table->renameColumn('total', 'price');
+                } else {
+                    $table->decimal('price', 10, 2)->nullable()->after('quantity');
+                }
             }
 
-            if (!Schema::hasColumn('order_items', 'price')) {
-                $table->decimal('price', 10, 2)->after('quantity');
-            }
-
-            if (!Schema::hasColumn('order_items', 'created_at')) {
+            if (!$hasCreatedAt) {
                 $table->timestamps();
             }
 
